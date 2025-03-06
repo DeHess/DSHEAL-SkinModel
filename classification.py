@@ -3,33 +3,34 @@ import pandas as pd
 import glob
 from sklearn.model_selection import train_test_split
 
-# Define paths
 image_folder = "archive/ISIC_2019_Training_Input"
-metadata_csv = "ISIC_2019_Training_GroundTruth.csv"
-groundtruth_csv = "ISIC_2019_Training_Metadata.csv"
+metadata_csv = "archive/ISIC_2019_Training_Metadata.csv"
+groundtruth_csv = "archive/ISIC_2019_Training_GroundTruth.csv"
 
-# Load CSV files
-metadata_df = pd.read_csv(metadata_csv)
-groundtruth_df = pd.read_csv(groundtruth_csv)
+metadata = pd.read_csv(metadata_csv)
+groundtruth = pd.read_csv(groundtruth_csv)
 
-# Merge data on image filename
-df = metadata_df.merge(groundtruth_df, on="filename")
+# Drop the 'UNK' class column from groundtruth. 
+# UNK stands for UNKNOWN, or "none of the above" and can
+# be assigned last, if no other diagnosis was found.
+groundtruth = groundtruth.drop(columns=["UNK"])
 
-# Get list of all image paths
-image_paths = {os.path.basename(p): p for p in glob.glob(os.path.join(image_folder, "*"))}
+# Fill with "Unknown" if feature is empty
+metadata["anatom_site_general"] = metadata["anatom_site_general"].fillna("unknown")
+metadata["lesion_id"] = metadata["lesion_id"].fillna("unknown")
+metadata["sex"] = metadata["sex"].fillna("unknown")
 
-# Add full image paths to dataframe
-df["image_path"] = df["filename"].map(image_paths)
+# Use the median age if no age is specified 
+metadata["age_approx"] = metadata["age_approx"].fillna(metadata["age_approx"].median())
 
-# Drop rows with missing images
-df = df.dropna(subset=["image_path"])
+# Merge metadata with ground truth using "image" as the key
+df = pd.merge(metadata, groundtruth, on="image")
 
-# Split into Train/Test (70/30)
-train_df, test_df = train_test_split(df, test_size=0.3, random_state=42, stratify=df["groundtruth_column"]) 
+# Split into train (70%) and test (30%)
+train_df, test_df = train_test_split(df, test_size=0.3, random_state=42, stratify=df.iloc[:, 1:]) 
 
-# Print results
-print(f"Total: {len(df)}, Training: {len(train_df)}, Testing: {len(test_df)}")
+# Save the train and test datasets
+train_df.to_csv("train.csv", index=False)
+test_df.to_csv("test.csv", index=False)
 
-# Save train and test splits (optional)
-train_df.to_csv("train_data.csv", index=False)
-test_df.to_csv("test_data.csv", index=False)
+print(f"Train set: {train_df.shape}, Test set: {test_df.shape}")
