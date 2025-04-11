@@ -45,6 +45,13 @@ ROC AUC: Most classes > 0.95; best AUC = 0.98 for class 2 and class 6
 
 Notes: Class weighting helped poor-performing classes slightly but lowered overall accuracy
 
+
+# Link To OneDrive
+
+https://1drv.ms/f/s!AtRU6kKnPW-cqa9lMcpjIjs6coM5kA?e=oCOh5c
+
 # Team Members and Contributions
 Gabriel Gillmann
 Nathan Hess
+
+
